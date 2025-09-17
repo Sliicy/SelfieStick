@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
+using System.Xml.Linq;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Storage.Streams;
@@ -114,7 +115,7 @@ namespace SelfieStick
             {
                 string videosPath = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
                 string dateString = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"); // More unique filename
-                _outputFilePath = Path.Combine(videosPath, $"SelfieStick_Markers_{dateString}.csv");
+                _outputFilePath = Path.Combine(videosPath, $"SelfieStick_Markers_{dateString}.xml");
                 Log($"Timestamp file initialized at: {_outputFilePath}");
             }
             catch (Exception ex)
@@ -123,6 +124,36 @@ namespace SelfieStick
             }
         }
 
+        // Old CSV code:
+        //private void SaveTimestampsToFile()
+        //{
+        //    if (string.IsNullOrEmpty(_outputFilePath) || _timestampEntries.Count == 0)
+        //    {
+        //        return;
+        //    }
+
+        //    try
+        //    {
+        //        // This format is compatible with Adobe Premiere Pro's "Import Markers from CSV" feature.
+        //        // We assume a standard 30 FPS for the timecode frames part.
+        //        var csvBuilder = new StringBuilder();
+        //        csvBuilder.AppendLine("Marker Name,In,Out,Comment,Marker Type"); // Premiere Pro CSV Header
+
+        //        foreach (var entry in _timestampEntries)
+        //        {
+        //            string timecode = $"{entry.Time:hh\\:mm\\:ss}:00"; // Format as HH:MM:SS:FF (Frames)
+        //            string markerName = entry.EventName.Replace("\"", "\"\""); // Escape quotes for CSV
+        //            csvBuilder.AppendLine($"\"{markerName}\",\"{timecode}\",,,\"Comment\"");
+        //        }
+
+        //        File.WriteAllText(_outputFilePath, csvBuilder.ToString());
+        //        Log($"Saved {_timestampEntries.Count} timestamps to file.", LogLevel.DEBUG);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Log($"Failed to save timestamp file: {ex.Message}", LogLevel.ERROR);
+        //    }
+        //}
         private void SaveTimestampsToFile()
         {
             if (string.IsNullOrEmpty(_outputFilePath) || _timestampEntries.Count == 0)
@@ -132,24 +163,74 @@ namespace SelfieStick
 
             try
             {
-                // This format is compatible with Adobe Premiere Pro's "Import Markers from CSV" feature.
-                // We assume a standard 30 FPS for the timecode frames part.
-                var csvBuilder = new StringBuilder();
-                csvBuilder.AppendLine("Marker Name,In,Out,Comment,Marker Type"); // Premiere Pro CSV Header
+                const int fps = 30; // Standard frames per second for timecode calculation.
 
+                TimeSpan maxDuration = _timestampEntries.Count > 0 ? _timestampEntries.Max(e => e.Time) : TimeSpan.Zero;
+                int totalFrames = (int)(maxDuration.TotalSeconds * fps) + (5 * fps);
+
+                var xmeml = new XElement("xmeml", new XAttribute("version", "4"),
+                    new XElement("sequence", new XAttribute("id", "sequence-1"),
+                        new XElement("uuid", Guid.NewGuid().ToString().ToUpper()),
+                        new XElement("duration", totalFrames),
+                        new XElement("rate",
+                            new XElement("timebase", fps),
+                            new XElement("ntsc", "FALSE")
+                        ),
+                        new XElement("name", Path.GetFileNameWithoutExtension(_outputFilePath)),
+                        new XElement("media",
+                            new XElement("video"),
+                            new XElement("audio")
+                        ),
+                        new XElement("timecode",
+                            new XElement("rate",
+                                new XElement("timebase", fps),
+                                new XElement("ntsc", "FALSE")
+                            ),
+                            new XElement("string", "00:00:00:00"),
+                            new XElement("frame", "0"),
+                            new XElement("displayformat", "NDF")
+                        )
+                    )
+                );
+
+                XElement sequence = xmeml.Element("sequence");
+
+                // Add a marker for each timestamp entry.
                 foreach (var entry in _timestampEntries)
                 {
-                    string timecode = $"{entry.Time:hh\\:mm\\:ss}:00"; // Format as HH:MM:SS:FF (Frames)
-                    string markerName = entry.EventName.Replace("\"", "\"\""); // Escape quotes for CSV
-                    csvBuilder.AppendLine($"\"{markerName}\",\"{timecode}\",,,\"Comment\"");
+                    TimeSpan time = entry.Time;
+                    int totalFramesAtTime = (int)(time.TotalSeconds * fps);
+
+                    // Calculate the frame number for the HH:MM:SS:FF format
+                    int seconds = time.Seconds;
+                    double fractionalSeconds = time.TotalSeconds - Math.Truncate(time.TotalSeconds);
+                    int frame = (int)Math.Round(fractionalSeconds * fps);
+
+                    // Format the human-readable timecode string.
+                    string humanReadableTimecode = $"{time:hh\\:mm\\:ss}:{frame:D2} @ {fps}fps";
+
+                    sequence.Add(new XElement("marker",
+                        new XElement("name", entry.EventName),
+                        // --- THIS IS THE NEW LOGIC ---
+                        // The comment now contains the detailed, human-readable timecode.
+                        new XElement("comment", humanReadableTimecode),
+                        new XElement("in", totalFramesAtTime),
+                        new XElement("out", "-1")
+                    ));
                 }
 
-                File.WriteAllText(_outputFilePath, csvBuilder.ToString());
-                Log($"Saved {_timestampEntries.Count} timestamps to file.", LogLevel.DEBUG);
+                var xmlDocument = new XDocument(
+                    new XDeclaration("1.0", "UTF-8", null),
+                    new XDocumentType("xmeml", null, null, null),
+                    xmeml
+                );
+
+                xmlDocument.Save(_outputFilePath);
+                Log($"Saved {_timestampEntries.Count} timestamps to XML file.", LogLevel.DEBUG);
             }
             catch (Exception ex)
             {
-                Log($"Failed to save timestamp file: {ex.Message}", LogLevel.ERROR);
+                Log($"Failed to save XML file: {ex.Message}", LogLevel.ERROR);
             }
         }
 
