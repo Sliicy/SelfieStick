@@ -3,6 +3,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Xml.Linq;
 using Windows.Devices.Bluetooth;
+using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Storage.Streams;
 
@@ -34,7 +35,6 @@ namespace SelfieStick
         private static readonly Guid HidControlPointUuid = new("00002a4c-0000-1000-8000-00805f9b34fb");
         private static readonly Guid InputReportUuid = new("00002a4d-0000-1000-8000-00805f9b34fb");
         private static readonly Guid GattDescriptorUuidReportReference = new("00002908-0000-1000-8000-00805f9b34fb");
-
         public frmMain()
         {
             InitializeComponent();
@@ -282,20 +282,28 @@ namespace SelfieStick
                     return;
                 }
                 _serviceProvider = result.ServiceProvider;
+
+                // This is the CRITICAL part. Make sure this method still has the
+                // GattProtectionLevel.EncryptionRequired changes inside it.
                 await CreateHidCharacteristics();
+
+                // We are back to the simple, original way of advertising.
                 var advParameters = new GattServiceProviderAdvertisingParameters { IsDiscoverable = true, IsConnectable = true };
                 _serviceProvider.StartAdvertising(advParameters);
-                Log("Advertising started.");
+
+                Log("Advertising started. Service is running.");
                 _isServiceRunning = true;
                 statusLabel.Text = "Status: Advertising. Pair devices from phone(s) now...";
             }
             catch (Exception ex)
             {
                 Log($"An exception occurred during service startup: {ex.Message}", LogLevel.ERROR);
-                MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"An error occurred: {ex.Message}\n\nPlease ensure your computer's Bluetooth is turned on.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 ResetUiToIdle();
             }
         }
+
+
         private void StopService()
         {
             Log("Stopping service...");
@@ -441,22 +449,24 @@ namespace SelfieStick
         private async Task CreateHidCharacteristics()
         {
             if (_serviceProvider == null) return;
-            Log("Creating HID characteristics (Relative/Trigger mode)...", LogLevel.DEBUG);
+            Log("Creating HID characteristics (iOS compatible)...", LogLevel.DEBUG);
+
+            // --- NEW: Define the required protection level ---
+            var protectionLevel = GattProtectionLevel.EncryptionRequired;
 
             // Report Map & HID Info are standard
-            var reportMapParameters = new GattLocalCharacteristicParameters { CharacteristicProperties = GattCharacteristicProperties.Read, StaticValue = GetHidReportMap().AsBuffer(), ReadProtectionLevel = GattProtectionLevel.Plain };
+            var reportMapParameters = new GattLocalCharacteristicParameters { CharacteristicProperties = GattCharacteristicProperties.Read, StaticValue = GetHidReportMap().AsBuffer(), ReadProtectionLevel = protectionLevel }; // Changed
             var result = await _serviceProvider.Service.CreateCharacteristicAsync(HidReportMapUuid, reportMapParameters);
             if (result.Error != BluetoothError.Success) throw new Exception($"Create Report Map failed: {result.Error}");
 
-            var infoParameters = new GattLocalCharacteristicParameters { CharacteristicProperties = GattCharacteristicProperties.Read, StaticValue = new byte[] { 0x11, 0x01, 0x00, 0x03 }.AsBuffer(), ReadProtectionLevel = GattProtectionLevel.Plain };
+            var infoParameters = new GattLocalCharacteristicParameters { CharacteristicProperties = GattCharacteristicProperties.Read, StaticValue = new byte[] { 0x11, 0x01, 0x00, 0x03 }.AsBuffer(), ReadProtectionLevel = protectionLevel }; // Changed
             result = await _serviceProvider.Service.CreateCharacteristicAsync(HidInformationUuid, infoParameters);
             if (result.Error != BluetoothError.Success) throw new Exception($"Create HID Info failed: {result.Error}");
 
-            // We use the standard Read | Notify properties.
             var inputReportParameters = new GattLocalCharacteristicParameters
             {
                 CharacteristicProperties = GattCharacteristicProperties.Read | GattCharacteristicProperties.Notify,
-                ReadProtectionLevel = GattProtectionLevel.Plain
+                ReadProtectionLevel = protectionLevel // Changed
             };
             var inputReportResult = await _serviceProvider.Service.CreateCharacteristicAsync(InputReportUuid, inputReportParameters);
             if (inputReportResult.Error != BluetoothError.Success) throw new Exception($"Create Input Report failed: {inputReportResult.Error}");
@@ -465,15 +475,15 @@ namespace SelfieStick
             _inputReportCharacteristic.SubscribedClientsChanged += InputReportCharacteristic_SubscribedClientsChanged;
             Log("Input Report characteristic created and event handler subscribed.");
 
-            var reportRefParams = new GattLocalDescriptorParameters { StaticValue = new byte[] { 0x01, 0x01 }.AsBuffer(), ReadProtectionLevel = GattProtectionLevel.Plain };
+            var reportRefParams = new GattLocalDescriptorParameters { StaticValue = new byte[] { 0x01, 0x01 }.AsBuffer(), ReadProtectionLevel = protectionLevel }; // Changed
             var descResult = await _inputReportCharacteristic.CreateDescriptorAsync(GattDescriptorUuidReportReference, reportRefParams);
             if (descResult.Error != BluetoothError.Success) throw new Exception($"Create Report Ref failed: {descResult.Error}");
 
-            var controlPointParameters = new GattLocalCharacteristicParameters { CharacteristicProperties = GattCharacteristicProperties.WriteWithoutResponse, WriteProtectionLevel = GattProtectionLevel.Plain };
+            var controlPointParameters = new GattLocalCharacteristicParameters { CharacteristicProperties = GattCharacteristicProperties.WriteWithoutResponse, WriteProtectionLevel = protectionLevel }; // Changed
             result = await _serviceProvider.Service.CreateCharacteristicAsync(HidControlPointUuid, controlPointParameters);
             if (result.Error != BluetoothError.Success) throw new Exception($"Create Control Point failed: {result.Error}");
 
-            Log("All HID characteristics created successfully.");
+            Log("All HID characteristics created successfully with encryption required.");
         }
 
         private static byte[] GetHidReportMap()
@@ -481,8 +491,8 @@ namespace SelfieStick
             // This HID Report Map has been modified to define the controls as RELATIVE.
             // This sends atomic "trigger" events instead of stateful "down/up" events,
             // which works around the phone's OS input bug.
-            return new byte[]
-            {
+            return
+            [
                 0x05, 0x0C,       // Usage Page (Consumer)
                 0x09, 0x01,       // Usage (Consumer Control)
                 0xA1, 0x01,       // Collection (Application)
@@ -495,14 +505,12 @@ namespace SelfieStick
                 0x09, 0xE2,       //   Usage (Mute)
                 0x75, 0x01,       //   Report Size (1)
                 0x95, 0x04,       //   Report Count (4)
-                // --- THE CRITICAL CHANGE IS HERE ---
-                // 0x81, 0x02,    //   Input (Data,Var,Abs)  <- OLD STATEFUL WAY
                 0x81, 0x06,       //   Input (Data,Var,Rel)  <- NEW TRIGGER WAY
                 0x75, 0x04,       //   Report Size (4) -- Pad to 1 byte
                 0x95, 0x01,       //   Report Count (1)
                 0x81, 0x03,       //   Input (Cnst,Var,Abs) -- The padding is constant.
                 0xC0              // End Collection
-            };
+            ];
         }
 
         private void OpenTimelogsFolderButton_Click(object sender, EventArgs e)
