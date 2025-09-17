@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmMain));
             statusLabel = new Label();
             tabControl = new TabControl();
             timestampsTab = new TabPage();
@@ -341,6 +342,7 @@
             Controls.Add(recordingGroupBox);
             Controls.Add(tabControl);
             Controls.Add(statusLabel);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             MinimumSize = new Size(540, 442);
             Name = "frmMain";
             StartPosition = FormStartPosition.CenterScreen;
