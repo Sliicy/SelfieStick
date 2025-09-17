@@ -72,7 +72,7 @@
             statusLabel.Location = new Point(0, 368);
             statusLabel.Name = "statusLabel";
             statusLabel.Size = new Size(522, 27);
-            statusLabel.TabIndex = 2;
+            statusLabel.TabIndex = 19;
             statusLabel.Text = "Status: Idle";
             statusLabel.TextAlign = ContentAlignment.MiddleLeft;
             // 
@@ -85,7 +85,7 @@
             tabControl.Name = "tabControl";
             tabControl.SelectedIndex = 0;
             tabControl.Size = new Size(498, 291);
-            tabControl.TabIndex = 6;
+            tabControl.TabIndex = 4;
             // 
             // timestampsTab
             // 
@@ -109,7 +109,7 @@
             timestampsGroupBox.Location = new Point(6, 6);
             timestampsGroupBox.Name = "timestampsGroupBox";
             timestampsGroupBox.Size = new Size(200, 246);
-            timestampsGroupBox.TabIndex = 1;
+            timestampsGroupBox.TabIndex = 5;
             timestampsGroupBox.TabStop = false;
             timestampsGroupBox.Text = "Timestamp Actions";
             // 
@@ -119,7 +119,7 @@
             clearTimestampsButton.Location = new Point(6, 203);
             clearTimestampsButton.Name = "clearTimestampsButton";
             clearTimestampsButton.Size = new Size(188, 37);
-            clearTimestampsButton.TabIndex = 2;
+            clearTimestampsButton.TabIndex = 8;
             clearTimestampsButton.Text = "C&lear Timestamps";
             clearTimestampsButton.UseVisualStyleBackColor = true;
             clearTimestampsButton.Click += ClearTimestampsButton_Click;
@@ -130,7 +130,7 @@
             censorReminderButton.Location = new Point(6, 75);
             censorReminderButton.Name = "censorReminderButton";
             censorReminderButton.Size = new Size(188, 37);
-            censorReminderButton.TabIndex = 1;
+            censorReminderButton.TabIndex = 7;
             censorReminderButton.Text = "&Censor Reminder";
             censorReminderButton.UseVisualStyleBackColor = true;
             censorReminderButton.Click += CensorReminderButton_Click;
@@ -141,7 +141,7 @@
             newSectionButton.Location = new Point(6, 26);
             newSectionButton.Name = "newSectionButton";
             newSectionButton.Size = new Size(188, 37);
-            newSectionButton.TabIndex = 0;
+            newSectionButton.TabIndex = 6;
             newSectionButton.Text = "&New Section";
             newSectionButton.UseVisualStyleBackColor = true;
             newSectionButton.Click += NewSectionButton_Click;
@@ -156,7 +156,7 @@
             timestampsTextBox.ReadOnly = true;
             timestampsTextBox.ScrollBars = ScrollBars.Vertical;
             timestampsTextBox.Size = new Size(272, 246);
-            timestampsTextBox.TabIndex = 0;
+            timestampsTextBox.TabIndex = 9;
             // 
             // remoteTab
             // 
@@ -193,11 +193,12 @@
             // 
             // connectedDevicesListBox
             // 
+            connectedDevicesListBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             connectedDevicesListBox.FormattingEnabled = true;
             connectedDevicesListBox.Location = new Point(3, 23);
             connectedDevicesListBox.Name = "connectedDevicesListBox";
-            connectedDevicesListBox.Size = new Size(225, 64);
-            connectedDevicesListBox.TabIndex = 5;
+            connectedDevicesListBox.Size = new Size(225, 44);
+            connectedDevicesListBox.TabIndex = 15;
             // 
             // label1
             // 
@@ -205,7 +206,7 @@
             label1.Location = new Point(0, 0);
             label1.Name = "label1";
             label1.Size = new Size(138, 20);
-            label1.TabIndex = 4;
+            label1.TabIndex = 14;
             label1.Text = "Connected Devices:";
             // 
             // clearLogButton
@@ -214,7 +215,7 @@
             clearLogButton.Location = new Point(134, -1);
             clearLogButton.Name = "clearLogButton";
             clearLogButton.Size = new Size(94, 29);
-            clearLogButton.TabIndex = 2;
+            clearLogButton.TabIndex = 17;
             clearLogButton.Text = "Clear Log";
             clearLogButton.UseVisualStyleBackColor = true;
             clearLogButton.Click += ClearLogButton_Click;
@@ -228,7 +229,7 @@
             logTextBox.ReadOnly = true;
             logTextBox.ScrollBars = ScrollBars.Vertical;
             logTextBox.Size = new Size(225, 127);
-            logTextBox.TabIndex = 1;
+            logTextBox.TabIndex = 18;
             // 
             // label2
             // 
@@ -236,7 +237,7 @@
             label2.Location = new Point(3, 5);
             label2.Name = "label2";
             label2.Size = new Size(97, 20);
-            label2.TabIndex = 0;
+            label2.TabIndex = 16;
             label2.Text = "BT Event Log:";
             // 
             // remoteControlGroupBox
@@ -247,8 +248,8 @@
             remoteControlGroupBox.Enabled = false;
             remoteControlGroupBox.Location = new Point(6, 6);
             remoteControlGroupBox.Name = "remoteControlGroupBox";
-            remoteControlGroupBox.Size = new Size(244, 187);
-            remoteControlGroupBox.TabIndex = 7;
+            remoteControlGroupBox.Size = new Size(244, 246);
+            remoteControlGroupBox.TabIndex = 10;
             remoteControlGroupBox.TabStop = false;
             remoteControlGroupBox.Text = "Phone Remote Control";
             // 
@@ -257,7 +258,7 @@
             volumeDownButton.Location = new Point(23, 127);
             volumeDownButton.Name = "volumeDownButton";
             volumeDownButton.Size = new Size(198, 38);
-            volumeDownButton.TabIndex = 2;
+            volumeDownButton.TabIndex = 13;
             volumeDownButton.Text = "Volume &Down";
             volumeDownButton.UseVisualStyleBackColor = true;
             volumeDownButton.Click += VolumeDownButton_Click;
@@ -267,7 +268,7 @@
             volumeUpButton.Location = new Point(23, 83);
             volumeUpButton.Name = "volumeUpButton";
             volumeUpButton.Size = new Size(198, 38);
-            volumeUpButton.TabIndex = 1;
+            volumeUpButton.TabIndex = 12;
             volumeUpButton.Text = "Volume &Up";
             volumeUpButton.UseVisualStyleBackColor = true;
             volumeUpButton.Click += VolumeUpButton_Click;
@@ -277,7 +278,7 @@
             shutterButton.Location = new Point(23, 39);
             shutterButton.Name = "shutterButton";
             shutterButton.Size = new Size(198, 38);
-            shutterButton.TabIndex = 0;
+            shutterButton.TabIndex = 11;
             shutterButton.Text = "Shutter / &Play";
             shutterButton.UseVisualStyleBackColor = true;
             shutterButton.Click += ShutterButton_Click;
@@ -291,7 +292,7 @@
             recordingGroupBox.Location = new Point(12, 3);
             recordingGroupBox.Name = "recordingGroupBox";
             recordingGroupBox.Size = new Size(494, 56);
-            recordingGroupBox.TabIndex = 7;
+            recordingGroupBox.TabIndex = 0;
             recordingGroupBox.TabStop = false;
             recordingGroupBox.Text = "Recording Session";
             // 
@@ -302,7 +303,7 @@
             recordingTimerLabel.Location = new Point(390, 18);
             recordingTimerLabel.Name = "recordingTimerLabel";
             recordingTimerLabel.Size = new Size(98, 32);
-            recordingTimerLabel.TabIndex = 1;
+            recordingTimerLabel.TabIndex = 3;
             recordingTimerLabel.Text = "00:00:00";
             recordingTimerLabel.TextAlign = ContentAlignment.MiddleRight;
             // 
@@ -311,7 +312,7 @@
             openTimelogsFolderButton.Location = new Point(200, 18);
             openTimelogsFolderButton.Name = "openTimelogsFolderButton";
             openTimelogsFolderButton.Size = new Size(188, 32);
-            openTimelogsFolderButton.TabIndex = 1;
+            openTimelogsFolderButton.TabIndex = 2;
             openTimelogsFolderButton.Text = "&Open Timelogs Folder";
             openTimelogsFolderButton.UseVisualStyleBackColor = true;
             openTimelogsFolderButton.Click += OpenTimelogsFolderButton_Click;
@@ -322,7 +323,7 @@
             startStopRecordingButton.Location = new Point(6, 18);
             startStopRecordingButton.Name = "startStopRecordingButton";
             startStopRecordingButton.Size = new Size(188, 32);
-            startStopRecordingButton.TabIndex = 0;
+            startStopRecordingButton.TabIndex = 1;
             startStopRecordingButton.Text = "Start &Recording";
             startStopRecordingButton.UseVisualStyleBackColor = true;
             startStopRecordingButton.Click += StartStopRecordingButton_Click;
