@@ -13,7 +13,7 @@ namespace SelfieStick
     public record TimestampEntry(TimeSpan Time, string EventName);
     public partial class frmMain : Form
     {
-        
+
         private bool _isRecording = false;
         private DateTime _recordingStartTime;
         private string? _outputFilePath;
@@ -25,11 +25,31 @@ namespace SelfieStick
         private bool _isServiceRunning = false;
         private bool _isSendingCommand = false;
 
-        private const byte CMD_ID_VOL_UP = 1;
-        private const byte CMD_ID_VOL_DOWN = 2;
-        private const byte CMD_ID_PLAY_PAUSE = 3;
-        private const byte CMD_ID_NEXT_TRACK = 4; // --- ADDED ---
-        private const byte CMD_ID_PREV_TRACK = 5; // --- ADDED ---
+        // --- HID Consumer Page Usage IDs ---
+        private const ushort USAGE_ID_POWER = 0x0030;
+        private const ushort USAGE_ID_SLEEP = 0x0032;
+        private const ushort USAGE_ID_WAKE = 0x0035;
+        private const ushort USAGE_ID_BACK = 0x0224;
+        private const ushort USAGE_ID_HOME = 0x0223;
+        private const ushort USAGE_ID_MENU = 0x0040;
+        private const ushort USAGE_ID_GOOGLE = 0x00CF; // Also used for Siri/Voice Assistant
+        private const ushort USAGE_ID_BRIGHTNESS_UP = 0x006F;
+        private const ushort USAGE_ID_BRIGHTNESS_DOWN = 0x0070;
+        private const ushort USAGE_ID_PLAY_PAUSE = 0x00CD;
+        private const ushort USAGE_ID_FAST_FORWARD = 0x00B3;
+        private const ushort USAGE_ID_REWIND = 0x00B4;
+        private const ushort USAGE_ID_NEXT_TRACK = 0x00B5;
+        private const ushort USAGE_ID_PREV_TRACK = 0x00B6;
+        private const ushort USAGE_ID_STOP = 0x00B7;
+        private const ushort USAGE_ID_MUTE = 0x00E2;
+        private const ushort USAGE_ID_VOL_UP = 0x00E9;
+        private const ushort USAGE_ID_VOL_DOWN = 0x00EA;
+        private const ushort USAGE_ID_CALCULATOR = 0x0192;
+        private const ushort USAGE_ID_BROWSER = 0x0196;
+        private const ushort USAGE_ID_CALENDAR = 0x018E;
+        // The following commands are not on the consumer page and won't work with the current HID Report Map.
+        // They are included for UI completeness but will not send a command.
+        private const ushort USAGE_ID_UNSUPPORTED = 0xFFFF;
 
         private static readonly Guid HidServiceUuid = new("00001812-0000-1000-8000-00805f9b34fb");
         private static readonly Guid HidReportMapUuid = new("00002a4b-0000-1000-8000-00805f9b34fb");
@@ -46,13 +66,13 @@ namespace SelfieStick
         {
             await StartService();
         }
-        
+
         private async void StartStopRecordingButton_Click(object sender, EventArgs e)
         {
             _isRecording = !_isRecording;
             if (_isRecording)
             {
-                await SendCommandAsync(CMD_ID_VOL_UP, "Start Recording Trigger");
+                await SendCommandAsync(USAGE_ID_VOL_UP, "Start Recording Trigger");
                 _recordingStartTime = DateTime.Now;
                 startStopRecordingButton.Text = "Stop Recording";
                 timestampsGroupBox.Enabled = true;
@@ -62,7 +82,7 @@ namespace SelfieStick
             }
             else
             {
-                await SendCommandAsync(CMD_ID_VOL_UP, "Stop Recording Trigger");
+                await SendCommandAsync(USAGE_ID_VOL_UP, "Stop Recording Trigger");
                 recordingTimer.Stop();
                 AddTimestamp("Recording Stopped");
                 SaveTimestampsToFile();
@@ -145,7 +165,7 @@ namespace SelfieStick
                     try
                     {
                         InitializeTimestampFile();
-                        
+
                     }
                     catch (Exception ex)
                     {
@@ -236,19 +256,49 @@ namespace SelfieStick
                 statusLabel.Text = "Status: Advertising. Waiting for connections...";
             }
         }
-        
 
-        // --- NEW AND UPDATED Event Handlers ---
-        private async void VolumeUpButton_Click(object sender, EventArgs e) => await SendCommandAsync(CMD_ID_VOL_UP, "Volume Up");
-        private async void volumeDownButton_Click(object sender, EventArgs e) => await SendCommandAsync(CMD_ID_VOL_DOWN, "Volume Down");
-        private async void playPauseButton_Click(object sender, EventArgs e) => await SendCommandAsync(CMD_ID_PLAY_PAUSE, "Play/Pause");
-        private async void nextButton_Click(object sender, EventArgs e) => await SendCommandAsync(CMD_ID_NEXT_TRACK, "Next Track");
-        private async void previousButton_Click(object sender, EventArgs e) => await SendCommandAsync(CMD_ID_PREV_TRACK, "Previous Track");
-        // --- shutterButton_Click was REMOVED ---
 
-        private async Task SendCommandAsync(byte commandIdentifier, string commandName)
+        // --- Event Handlers for Remote Buttons ---
+        private async void VolumeUpButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_VOL_UP, "Volume Up");
+        private async void volumeDownButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_VOL_DOWN, "Volume Down");
+        private async void playPauseButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_PLAY_PAUSE, "Play/Pause");
+        private async void nextButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_NEXT_TRACK, "Next Track");
+        private async void previousButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_PREV_TRACK, "Previous Track");
+        private async void powerButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_POWER, "Power");
+        private async void powerLongPressButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_POWER, "Power (Long Press)", 1500);
+        private async void sleepButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_SLEEP, "Sleep");
+        private async void wakeButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_WAKE, "Wake");
+        private async void backButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_BACK, "Back");
+        private async void homeButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_HOME, "Home");
+        private async void menuButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_MENU, "Menu");
+        private async void googleButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_GOOGLE, "Google/Siri");
+        private async void brightnessUpButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_BRIGHTNESS_UP, "Increase Brightness");
+        private async void brightnessDownButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_BRIGHTNESS_DOWN, "Decrease Brightness");
+        private async void fastForwardButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_FAST_FORWARD, "Fast Forward");
+        private async void rewindButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_REWIND, "Rewind");
+        private async void stopButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_STOP, "Stop");
+        private async void muteButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_MUTE, "Mute");
+        private async void calculatorButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_CALCULATOR, "Calculator");
+        private async void browserButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_BROWSER, "Browser");
+        private async void calendarButton_Click(object sender, EventArgs e) => await SendCommandAsync(USAGE_ID_CALENDAR, "Calendar");
+
+        // --- Event Handlers for Unsupported Buttons (they do nothing) ---
+        private void scrollUpButton_Click(object sender, EventArgs e) { /* Not supported by current HID profile */ }
+        private void scrollDownButton_Click(object sender, EventArgs e) { /* Not supported by current HID profile */ }
+        private void cutButton_Click(object sender, EventArgs e) { /* Not supported by current HID profile */ }
+        private void copyButton_Click(object sender, EventArgs e) { /* Not supported by current HID profile */ }
+        private void pasteButton_Click(object sender, EventArgs e) { /* Not supported by current HID profile */ }
+        private void selectButton_Click(object sender, EventArgs e) { /* Not supported by current HID profile */ }
+        private void menuUpButton_Click(object sender, EventArgs e) { /* Not supported by current HID profile */ }
+        private void menuDownButton_Click(object sender, EventArgs e) { /* Not supported by current HID profile */ }
+        private void menuLeftButton_Click(object sender, EventArgs e) { /* Not supported by current HID profile */ }
+        private void menuRightButton_Click(object sender, EventArgs e) { /* Not supported by current HID profile */ }
+        private void menuEscapeButton_Click(object sender, EventArgs e) { /* Not supported by current HID profile */ }
+
+
+        private async Task SendCommandAsync(ushort usageId, string commandName, int pressDurationMs = 50)
         {
-            if (_isSendingCommand || !_isServiceRunning || _inputReportCharacteristic == null || _inputReportCharacteristic.SubscribedClients.Count == 0)
+            if (usageId == USAGE_ID_UNSUPPORTED || _isSendingCommand || !_isServiceRunning || _inputReportCharacteristic == null || _inputReportCharacteristic.SubscribedClients.Count == 0)
             {
                 return;
             }
@@ -258,34 +308,12 @@ namespace SelfieStick
                 _isSendingCommand = true;
                 remoteControlGroupBox.Enabled = false;
 
-                ushort usageId = 0;
-                switch (commandIdentifier)
-                {
-                    case CMD_ID_VOL_UP:
-                        usageId = 0x00E9; // Volume Increment
-                        break;
-                    case CMD_ID_VOL_DOWN:
-                        usageId = 0x00EA; // Volume Decrement
-                        break;
-                    case CMD_ID_PLAY_PAUSE:
-                        usageId = 0x00CD; // Play/Pause
-                        break;
-                    case CMD_ID_NEXT_TRACK:
-                        usageId = 0x00B5; // Scan Next Track
-                        break;
-                    case CMD_ID_PREV_TRACK:
-                        usageId = 0x00B6; // Scan Previous Track
-                        break;
-                    default:
-                        return;
-                }
-
                 var pressPayload = BitConverter.GetBytes(usageId);
                 var releasePayload = new byte[] { 0x00, 0x00 };
 
                 await _inputReportCharacteristic.NotifyValueAsync(pressPayload.AsBuffer());
 
-                await Task.Delay(50);
+                await Task.Delay(pressDurationMs); // Use the specified duration
 
                 await _inputReportCharacteristic.NotifyValueAsync(releasePayload.AsBuffer());
 
@@ -293,7 +321,7 @@ namespace SelfieStick
             }
             catch (Exception ex)
             {
-                
+
             }
             finally
             {
