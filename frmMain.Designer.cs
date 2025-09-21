@@ -39,31 +39,26 @@
             newSectionButton = new Button();
             timestampsTextBox = new TextBox();
             remoteTab = new TabPage();
-            splitContainer1 = new SplitContainer();
             connectedDevicesListBox = new ListBox();
-            label1 = new Label();
-            clearLogButton = new Button();
-            logTextBox = new TextBox();
-            label2 = new Label();
             remoteControlGroupBox = new GroupBox();
+            previousButton = new Button();
+            nextButton = new Button();
+            playPauseButton = new Button();
             volumeDownButton = new Button();
             volumeUpButton = new Button();
-            shutterButton = new Button();
             recordingGroupBox = new GroupBox();
             recordingTimerLabel = new Label();
             openTimelogsFolderButton = new Button();
             startStopRecordingButton = new Button();
             recordingTimer = new System.Windows.Forms.Timer(components);
+            grpConnectedDevices = new GroupBox();
             tabControl.SuspendLayout();
             timestampsTab.SuspendLayout();
             timestampsGroupBox.SuspendLayout();
             remoteTab.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
-            splitContainer1.Panel1.SuspendLayout();
-            splitContainer1.Panel2.SuspendLayout();
-            splitContainer1.SuspendLayout();
             remoteControlGroupBox.SuspendLayout();
             recordingGroupBox.SuspendLayout();
+            grpConnectedDevices.SuspendLayout();
             SuspendLayout();
             // 
             // statusLabel
@@ -161,7 +156,7 @@
             // 
             // remoteTab
             // 
-            remoteTab.Controls.Add(splitContainer1);
+            remoteTab.Controls.Add(grpConnectedDevices);
             remoteTab.Controls.Add(remoteControlGroupBox);
             remoteTab.Location = new Point(4, 29);
             remoteTab.Name = "remoteTab";
@@ -171,81 +166,22 @@
             remoteTab.Text = "Remote Control & Debug";
             remoteTab.UseVisualStyleBackColor = true;
             // 
-            // splitContainer1
-            // 
-            splitContainer1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            splitContainer1.Location = new Point(256, 3);
-            splitContainer1.Name = "splitContainer1";
-            splitContainer1.Orientation = Orientation.Horizontal;
-            // 
-            // splitContainer1.Panel1
-            // 
-            splitContainer1.Panel1.Controls.Add(connectedDevicesListBox);
-            splitContainer1.Panel1.Controls.Add(label1);
-            // 
-            // splitContainer1.Panel2
-            // 
-            splitContainer1.Panel2.Controls.Add(clearLogButton);
-            splitContainer1.Panel2.Controls.Add(logTextBox);
-            splitContainer1.Panel2.Controls.Add(label2);
-            splitContainer1.Size = new Size(231, 252);
-            splitContainer1.SplitterDistance = 78;
-            splitContainer1.TabIndex = 8;
-            // 
             // connectedDevicesListBox
             // 
             connectedDevicesListBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             connectedDevicesListBox.FormattingEnabled = true;
-            connectedDevicesListBox.Location = new Point(3, 23);
+            connectedDevicesListBox.Location = new Point(6, 21);
             connectedDevicesListBox.Name = "connectedDevicesListBox";
-            connectedDevicesListBox.Size = new Size(225, 44);
+            connectedDevicesListBox.Size = new Size(206, 204);
             connectedDevicesListBox.TabIndex = 15;
-            // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.Location = new Point(0, 0);
-            label1.Name = "label1";
-            label1.Size = new Size(138, 20);
-            label1.TabIndex = 14;
-            label1.Text = "Connected Devices:";
-            // 
-            // clearLogButton
-            // 
-            clearLogButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            clearLogButton.Location = new Point(134, -1);
-            clearLogButton.Name = "clearLogButton";
-            clearLogButton.Size = new Size(94, 29);
-            clearLogButton.TabIndex = 17;
-            clearLogButton.Text = "Clear Log";
-            clearLogButton.UseVisualStyleBackColor = true;
-            clearLogButton.Click += ClearLogButton_Click;
-            // 
-            // logTextBox
-            // 
-            logTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            logTextBox.Location = new Point(3, 28);
-            logTextBox.Multiline = true;
-            logTextBox.Name = "logTextBox";
-            logTextBox.ReadOnly = true;
-            logTextBox.ScrollBars = ScrollBars.Vertical;
-            logTextBox.Size = new Size(225, 127);
-            logTextBox.TabIndex = 18;
-            // 
-            // label2
-            // 
-            label2.AutoSize = true;
-            label2.Location = new Point(3, 5);
-            label2.Name = "label2";
-            label2.Size = new Size(97, 20);
-            label2.TabIndex = 16;
-            label2.Text = "BT Event Log:";
             // 
             // remoteControlGroupBox
             // 
+            remoteControlGroupBox.Controls.Add(previousButton);
+            remoteControlGroupBox.Controls.Add(nextButton);
+            remoteControlGroupBox.Controls.Add(playPauseButton);
             remoteControlGroupBox.Controls.Add(volumeDownButton);
             remoteControlGroupBox.Controls.Add(volumeUpButton);
-            remoteControlGroupBox.Controls.Add(shutterButton);
             remoteControlGroupBox.Enabled = false;
             remoteControlGroupBox.Location = new Point(6, 6);
             remoteControlGroupBox.Name = "remoteControlGroupBox";
@@ -254,35 +190,55 @@
             remoteControlGroupBox.TabStop = false;
             remoteControlGroupBox.Text = "Phone Remote Control";
             // 
+            // previousButton
+            // 
+            previousButton.Location = new Point(23, 162);
+            previousButton.Name = "previousButton";
+            previousButton.Size = new Size(198, 38);
+            previousButton.TabIndex = 14;
+            previousButton.Text = "P&revious Track";
+            previousButton.UseVisualStyleBackColor = true;
+            previousButton.Click += previousButton_Click;
+            // 
+            // nextButton
+            // 
+            nextButton.Location = new Point(23, 118);
+            nextButton.Name = "nextButton";
+            nextButton.Size = new Size(198, 38);
+            nextButton.TabIndex = 13;
+            nextButton.Text = "&Next Track";
+            nextButton.UseVisualStyleBackColor = true;
+            nextButton.Click += nextButton_Click;
+            // 
+            // playPauseButton
+            // 
+            playPauseButton.Location = new Point(23, 206);
+            playPauseButton.Name = "playPauseButton";
+            playPauseButton.Size = new Size(198, 38);
+            playPauseButton.TabIndex = 15;
+            playPauseButton.Text = "P&lay/Pause";
+            playPauseButton.UseVisualStyleBackColor = true;
+            playPauseButton.Click += playPauseButton_Click;
+            // 
             // volumeDownButton
             // 
-            volumeDownButton.Location = new Point(23, 127);
+            volumeDownButton.Location = new Point(23, 74);
             volumeDownButton.Name = "volumeDownButton";
             volumeDownButton.Size = new Size(198, 38);
-            volumeDownButton.TabIndex = 13;
+            volumeDownButton.TabIndex = 12;
             volumeDownButton.Text = "Volume &Down";
             volumeDownButton.UseVisualStyleBackColor = true;
-            volumeDownButton.Click += VolumeDownButton_Click;
+            volumeDownButton.Click += volumeDownButton_Click;
             // 
             // volumeUpButton
             // 
-            volumeUpButton.Location = new Point(23, 83);
+            volumeUpButton.Location = new Point(23, 30);
             volumeUpButton.Name = "volumeUpButton";
             volumeUpButton.Size = new Size(198, 38);
-            volumeUpButton.TabIndex = 12;
+            volumeUpButton.TabIndex = 11;
             volumeUpButton.Text = "Volume &Up";
             volumeUpButton.UseVisualStyleBackColor = true;
             volumeUpButton.Click += VolumeUpButton_Click;
-            // 
-            // shutterButton
-            // 
-            shutterButton.Location = new Point(23, 39);
-            shutterButton.Name = "shutterButton";
-            shutterButton.Size = new Size(198, 38);
-            shutterButton.TabIndex = 11;
-            shutterButton.Text = "Shutter / &Play";
-            shutterButton.UseVisualStyleBackColor = true;
-            shutterButton.Click += ShutterButton_Click;
             // 
             // recordingGroupBox
             // 
@@ -334,6 +290,16 @@
             recordingTimer.Interval = 1000;
             recordingTimer.Tick += RecordingTimer_Tick;
             // 
+            // grpConnectedDevices
+            // 
+            grpConnectedDevices.Controls.Add(connectedDevicesListBox);
+            grpConnectedDevices.Location = new Point(256, 6);
+            grpConnectedDevices.Name = "grpConnectedDevices";
+            grpConnectedDevices.Size = new Size(218, 244);
+            grpConnectedDevices.TabIndex = 16;
+            grpConnectedDevices.TabStop = false;
+            grpConnectedDevices.Text = "Connected Devices";
+            // 
             // frmMain
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -354,14 +320,9 @@
             timestampsTab.PerformLayout();
             timestampsGroupBox.ResumeLayout(false);
             remoteTab.ResumeLayout(false);
-            splitContainer1.Panel1.ResumeLayout(false);
-            splitContainer1.Panel1.PerformLayout();
-            splitContainer1.Panel2.ResumeLayout(false);
-            splitContainer1.Panel2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
-            splitContainer1.ResumeLayout(false);
             remoteControlGroupBox.ResumeLayout(false);
             recordingGroupBox.ResumeLayout(false);
+            grpConnectedDevices.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -374,21 +335,20 @@
         private Button newSectionButton;
         private TextBox timestampsTextBox;
         private Button censorReminderButton;
-        private SplitContainer splitContainer1;
         private ListBox connectedDevicesListBox;
-        private Label label1;
-        private Button clearLogButton;
-        private TextBox logTextBox;
-        private Label label2;
         private GroupBox remoteControlGroupBox;
         private Button volumeDownButton;
         private Button volumeUpButton;
-        private Button shutterButton;
         private GroupBox recordingGroupBox;
         private Button startStopRecordingButton;
         private Label recordingTimerLabel;
         private System.Windows.Forms.Timer recordingTimer;
         private Button clearTimestampsButton;
         private Button openTimelogsFolderButton;
+        private Button playPauseButton;
+        private Button previousButton; // --- ADDED ---
+        private Button nextButton; // --- ADDED ---
+        private GroupBox grpConnectedDevices;
+        // --- shutterButton was REMOVED ---
     }
 }
