@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Xml.Linq;
@@ -13,7 +14,7 @@ namespace SelfieStick
     public partial class frmMain : Form
     {
 
-        #region Same Code (Logging, Service Control, etc.)
+        #region Unchanged Code (Logging, Service Control, etc.)
         private bool _isRecording = false;
         private DateTime _recordingStartTime;
         private string? _outputFilePath;
@@ -54,12 +55,9 @@ namespace SelfieStick
             logTextBox.ScrollToCaret();
         }
         private void ClearLogButton_Click(object sender, EventArgs e) => logTextBox.Clear();
-        private void StartStopButton_Click(object sender, EventArgs e)
-        {
+        private void StartStopButton_Click(object sender, EventArgs e) { }
 
-        }
-
-        #region New Timestamping Logic
+        #region Timestamping Logic (Unchanged)
         private async void StartStopRecordingButton_Click(object sender, EventArgs e)
         {
             _isRecording = !_isRecording;
@@ -101,11 +99,9 @@ namespace SelfieStick
             var entry = new TimestampEntry(elapsedTime, eventName);
             _timestampEntries.Add(entry);
 
-            // Update the UI textbox
             string formattedTime = elapsedTime.ToString(@"hh\:mm\:ss");
             timestampsTextBox.AppendText($"{formattedTime} {eventName}{Environment.NewLine}");
 
-            // Auto-save on every new entry for safety
             SaveTimestampsToFile();
         }
 
@@ -114,7 +110,7 @@ namespace SelfieStick
             try
             {
                 string videosPath = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
-                string dateString = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"); // More unique filename
+                string dateString = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
                 _outputFilePath = Path.Combine(videosPath, $"SelfieStick_Markers_{dateString}.xml");
                 Log($"Timestamp file initialized at: {_outputFilePath}");
             }
@@ -124,107 +120,26 @@ namespace SelfieStick
             }
         }
 
-        // Old CSV code:
-        //private void SaveTimestampsToFile()
-        //{
-        //    if (string.IsNullOrEmpty(_outputFilePath) || _timestampEntries.Count == 0)
-        //    {
-        //        return;
-        //    }
-
-        //    try
-        //    {
-        //        // This format is compatible with Adobe Premiere Pro's "Import Markers from CSV" feature.
-        //        // We assume a standard 30 FPS for the timecode frames part.
-        //        var csvBuilder = new StringBuilder();
-        //        csvBuilder.AppendLine("Marker Name,In,Out,Comment,Marker Type"); // Premiere Pro CSV Header
-
-        //        foreach (var entry in _timestampEntries)
-        //        {
-        //            string timecode = $"{entry.Time:hh\\:mm\\:ss}:00"; // Format as HH:MM:SS:FF (Frames)
-        //            string markerName = entry.EventName.Replace("\"", "\"\""); // Escape quotes for CSV
-        //            csvBuilder.AppendLine($"\"{markerName}\",\"{timecode}\",,,\"Comment\"");
-        //        }
-
-        //        File.WriteAllText(_outputFilePath, csvBuilder.ToString());
-        //        Log($"Saved {_timestampEntries.Count} timestamps to file.", LogLevel.DEBUG);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Log($"Failed to save timestamp file: {ex.Message}", LogLevel.ERROR);
-        //    }
-        //}
         private void SaveTimestampsToFile()
         {
-            if (string.IsNullOrEmpty(_outputFilePath) || _timestampEntries.Count == 0)
-            {
-                return;
-            }
-
+            if (string.IsNullOrEmpty(_outputFilePath) || _timestampEntries.Count == 0) return;
             try
             {
-                const int fps = 30; // Standard frames per second for timecode calculation.
-
+                const int fps = 30;
                 TimeSpan maxDuration = _timestampEntries.Count > 0 ? _timestampEntries.Max(e => e.Time) : TimeSpan.Zero;
                 int totalFrames = (int)(maxDuration.TotalSeconds * fps) + (5 * fps);
-
-                var xmeml = new XElement("xmeml", new XAttribute("version", "4"),
-                    new XElement("sequence", new XAttribute("id", "sequence-1"),
-                        new XElement("uuid", Guid.NewGuid().ToString().ToUpper()),
-                        new XElement("duration", totalFrames),
-                        new XElement("rate",
-                            new XElement("timebase", fps),
-                            new XElement("ntsc", "FALSE")
-                        ),
-                        new XElement("name", Path.GetFileNameWithoutExtension(_outputFilePath)),
-                        new XElement("media",
-                            new XElement("video"),
-                            new XElement("audio")
-                        ),
-                        new XElement("timecode",
-                            new XElement("rate",
-                                new XElement("timebase", fps),
-                                new XElement("ntsc", "FALSE")
-                            ),
-                            new XElement("string", "00:00:00:00"),
-                            new XElement("frame", "0"),
-                            new XElement("displayformat", "NDF")
-                        )
-                    )
-                );
-
+                var xmeml = new XElement("xmeml", new XAttribute("version", "4"), new XElement("sequence", new XAttribute("id", "sequence-1"), new XElement("uuid", Guid.NewGuid().ToString().ToUpper()), new XElement("duration", totalFrames), new XElement("rate", new XElement("timebase", fps), new XElement("ntsc", "FALSE")), new XElement("name", Path.GetFileNameWithoutExtension(_outputFilePath)), new XElement("media", new XElement("video"), new XElement("audio")), new XElement("timecode", new XElement("rate", new XElement("timebase", fps), new XElement("ntsc", "FALSE")), new XElement("string", "00:00:00:00"), new XElement("frame", "0"), new XElement("displayformat", "NDF"))));
                 XElement sequence = xmeml.Element("sequence");
-
-                // Add a marker for each timestamp entry.
                 foreach (var entry in _timestampEntries)
                 {
                     TimeSpan time = entry.Time;
                     int totalFramesAtTime = (int)(time.TotalSeconds * fps);
-
-                    // Calculate the frame number for the HH:MM:SS:FF format
-                    int seconds = time.Seconds;
                     double fractionalSeconds = time.TotalSeconds - Math.Truncate(time.TotalSeconds);
                     int frame = (int)Math.Round(fractionalSeconds * fps);
-
-                    // Format the human-readable timecode string.
                     string humanReadableTimecode = $"{time:hh\\:mm\\:ss}:{frame:D2} @ {fps}fps";
-
-                    sequence.Add(new XElement("marker",
-                        new XElement("name", entry.EventName),
-                        // --- THIS IS THE NEW LOGIC ---
-                        // The comment now contains the detailed, human-readable timecode.
-                        new XElement("comment", humanReadableTimecode),
-                        new XElement("in", totalFramesAtTime),
-                        new XElement("out", "-1")
-                    ));
+                    sequence.Add(new XElement("marker", new XElement("name", entry.EventName), new XElement("comment", humanReadableTimecode), new XElement("in", totalFramesAtTime), new XElement("out", "-1")));
                 }
-
-                var xmlDocument = new XDocument(
-                    new XDeclaration("1.0", "UTF-8", null),
-                    new XDocumentType("xmeml", null, null, null),
-                    xmeml
-                );
-
+                var xmlDocument = new XDocument(new XDeclaration("1.0", "UTF-8", null), new XDocumentType("xmeml", null, null, null), xmeml);
                 xmlDocument.Save(_outputFilePath);
                 Log($"Saved {_timestampEntries.Count} timestamps to XML file.", LogLevel.DEBUG);
             }
@@ -253,7 +168,6 @@ namespace SelfieStick
                 {
                     try
                     {
-                        // Instead of deleting, let's just re-initialize for a new session in the same file
                         InitializeTimestampFile();
                         Log("Timestamps cleared from UI. A new session will write to the same file or a new one if the date changes.");
                     }
@@ -262,7 +176,7 @@ namespace SelfieStick
                         Log($"Error during timestamp clear: {ex.Message}", LogLevel.ERROR);
                     }
                 }
-                AddTimestamp("Timestamps Cleared"); // Add a marker for the clear event
+                AddTimestamp("Timestamps Cleared");
             }
         }
         #endregion
@@ -283,11 +197,8 @@ namespace SelfieStick
                 }
                 _serviceProvider = result.ServiceProvider;
 
-                // This is the CRITICAL part. Make sure this method still has the
-                // GattProtectionLevel.EncryptionRequired changes inside it.
                 await CreateHidCharacteristics();
 
-                // We are back to the simple, original way of advertising.
                 var advParameters = new GattServiceProviderAdvertisingParameters { IsDiscoverable = true, IsConnectable = true };
                 _serviceProvider.StartAdvertising(advParameters);
 
@@ -302,7 +213,6 @@ namespace SelfieStick
                 ResetUiToIdle();
             }
         }
-
 
         private void StopService()
         {
@@ -324,7 +234,6 @@ namespace SelfieStick
         {
             if (_isRecording)
             {
-                // Ensure a final save if the user closes while recording.
                 AddTimestamp("Recording Stopped (App Closed)");
                 SaveTimestampsToFile();
             }
@@ -344,22 +253,13 @@ namespace SelfieStick
             int clientCount = clients.Count;
             Log($"Found {clientCount} subscribed client(s).");
 
-            // --- NEW LOGIC IS HERE ---
-            // Check if we WERE recording and the last device just disconnected.
             if (_isRecording && clientCount == 0)
             {
                 Log("All devices disconnected during recording. Automatically stopping session.", LogLevel.WARN);
-
-                // We can safely call our existing button click handler to trigger the
-                // entire "stop recording" sequence (stop timer, save file, update UI).
-                // We pass null and EventArgs.Empty because the method doesn't use them.
                 StartStopRecordingButton_Click(null, EventArgs.Empty);
-
-                // Since the click handler already did everything, we can exit this method.
                 return;
             }
 
-            // --- The rest of the method is the same as before ---
             connectedDevicesListBox.Items.Clear();
             for (int i = 0; i < clientCount; i++)
             {
@@ -368,9 +268,6 @@ namespace SelfieStick
 
             bool clientsConnected = clientCount > 0;
             remoteControlGroupBox.Enabled = clientsConnected;
-
-            // This logic remains correct. The button is enabled if we are recording
-            // OR if we are not recording but devices are connected.
             startStopRecordingButton.Enabled = _isRecording || clientsConnected;
 
             Log(clientsConnected ? "Remote control panel ENABLED." : "Remote control panel DISABLED.");
@@ -388,22 +285,20 @@ namespace SelfieStick
         private async void VolumeDownButton_Click(object sender, EventArgs e) => await SendCommandAsync(VOL_DOWN_PAYLOAD, "Volume Down");
         #endregion
 
-        /// <summary>
-        /// Sends a single, atomic, stateless "trigger" command. This works because the HID Report Map
-        /// has been changed to define the controls as "Relative" instead of "Absolute".
-        /// This is the definitive fix for the phone's OS input state bug.
-        /// </summary>
-        private async Task SendCommandAsync(byte commandPayload, string commandName)
+
+        //================================================================================
+        // CORRECTED METHOD - SENDS HID-COMPLIANT PAYLOAD
+        //================================================================================
+        private async Task SendCommandAsync(byte commandIdentifier, string commandName)
         {
-            Log($"'{commandName}' button clicked.", LogLevel.DEBUG);
-            if (_isSendingCommand)
+            if (commandIdentifier != VOL_UP_PAYLOAD)
             {
-                Log("Command ignored: another command is already in progress.", LogLevel.WARN);
+                Log($"Command '{commandName}' ignored as per requirements.", LogLevel.WARN);
                 return;
             }
-            if (!_isServiceRunning || _inputReportCharacteristic == null || _inputReportCharacteristic.SubscribedClients.Count == 0)
+
+            if (_isSendingCommand || !_isServiceRunning || _inputReportCharacteristic == null || _inputReportCharacteristic.SubscribedClients.Count == 0)
             {
-                Log("Command aborted: no connected clients.", LogLevel.WARN);
                 return;
             }
 
@@ -411,25 +306,28 @@ namespace SelfieStick
             {
                 _isSendingCommand = true;
                 remoteControlGroupBox.Enabled = false;
-                Log("Busy flag set. Remote UI disabled.", LogLevel.DEBUG);
 
-                // With a Relative control map, the KeyDown payload IS the full command.
-                // It means "trigger this action once". No KeyUp is ever needed.
-                var triggerPayload = new byte[] { 0x01, commandPayload };
+                // PAYLOADS THAT ARE COMPLIANT WITH THE NEW, STANDARD HID REPORT MAP
+                // We send the 16-bit HID Usage ID for the pressed key.
+                // 0x00E9 = Volume Increment (Volume Up)
+                var pressPayload = new byte[] { 0xE9, 0x00 };
 
-                Log($"Sending Relative Trigger Notification for '{commandName}'...", LogLevel.DEBUG);
-                await _inputReportCharacteristic.NotifyValueAsync(triggerPayload.AsBuffer());
-                Log("Trigger Notification sent.", LogLevel.DEBUG);
-                await Task.Delay(200); // A generous delay to prevent user from spamming.
+                // 0x0000 = No key pressed (Release)
+                var releasePayload = new byte[] { 0x00, 0x00 };
 
-                string status = $"Status: Sent '{commandName}' to {_inputReportCharacteristic.SubscribedClients.Count} device(s).";
-                statusLabel.Text = status;
-                Log(status);
+                Log($"Sending Volume Up (0x00E9) PRESS notification...", LogLevel.DEBUG);
+                await _inputReportCharacteristic.NotifyValueAsync(pressPayload.AsBuffer());
+
+                await Task.Delay(50);
+
+                Log($"Sending Volume Up (0x0000) RELEASE notification...", LogLevel.DEBUG);
+                await _inputReportCharacteristic.NotifyValueAsync(releasePayload.AsBuffer());
+
+                statusLabel.Text = $"Status: Sent 'Volume Up' to {_inputReportCharacteristic.SubscribedClients.Count} device(s).";
             }
             catch (Exception ex)
             {
                 Log($"EXCEPTION in SendCommandAsync: {ex.Message}", LogLevel.ERROR);
-                MessageBox.Show($"Error sending command: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
@@ -437,11 +335,6 @@ namespace SelfieStick
                 if (_inputReportCharacteristic != null && _inputReportCharacteristic.SubscribedClients.Count > 0)
                 {
                     remoteControlGroupBox.Enabled = true;
-                    Log("Busy flag cleared. Remote UI re-enabled.", LogLevel.DEBUG);
-                }
-                else
-                {
-                    Log("Busy flag cleared. Remote UI remains disabled (no clients).", LogLevel.DEBUG);
                 }
             }
         }
@@ -449,66 +342,57 @@ namespace SelfieStick
         private async Task CreateHidCharacteristics()
         {
             if (_serviceProvider == null) return;
-            Log("Creating HID characteristics (iOS compatible)...", LogLevel.DEBUG);
+            Log("Creating HID characteristics...", LogLevel.DEBUG);
 
-            // --- NEW: Define the required protection level ---
             var protectionLevel = GattProtectionLevel.EncryptionRequired;
 
-            // Report Map & HID Info are standard
-            var reportMapParameters = new GattLocalCharacteristicParameters { CharacteristicProperties = GattCharacteristicProperties.Read, StaticValue = GetHidReportMap().AsBuffer(), ReadProtectionLevel = protectionLevel }; // Changed
+            var reportMapParameters = new GattLocalCharacteristicParameters { CharacteristicProperties = GattCharacteristicProperties.Read, StaticValue = GetHidReportMap().AsBuffer(), ReadProtectionLevel = protectionLevel };
             var result = await _serviceProvider.Service.CreateCharacteristicAsync(HidReportMapUuid, reportMapParameters);
             if (result.Error != BluetoothError.Success) throw new Exception($"Create Report Map failed: {result.Error}");
 
-            var infoParameters = new GattLocalCharacteristicParameters { CharacteristicProperties = GattCharacteristicProperties.Read, StaticValue = new byte[] { 0x11, 0x01, 0x00, 0x03 }.AsBuffer(), ReadProtectionLevel = protectionLevel }; // Changed
+            var infoParameters = new GattLocalCharacteristicParameters { CharacteristicProperties = GattCharacteristicProperties.Read, StaticValue = new byte[] { 0x11, 0x01, 0x00, 0x03 }.AsBuffer(), ReadProtectionLevel = protectionLevel };
             result = await _serviceProvider.Service.CreateCharacteristicAsync(HidInformationUuid, infoParameters);
             if (result.Error != BluetoothError.Success) throw new Exception($"Create HID Info failed: {result.Error}");
 
-            var inputReportParameters = new GattLocalCharacteristicParameters
-            {
-                CharacteristicProperties = GattCharacteristicProperties.Read | GattCharacteristicProperties.Notify,
-                ReadProtectionLevel = protectionLevel // Changed
-            };
+            var inputReportParameters = new GattLocalCharacteristicParameters { CharacteristicProperties = GattCharacteristicProperties.Read | GattCharacteristicProperties.Notify, ReadProtectionLevel = protectionLevel };
             var inputReportResult = await _serviceProvider.Service.CreateCharacteristicAsync(InputReportUuid, inputReportParameters);
             if (inputReportResult.Error != BluetoothError.Success) throw new Exception($"Create Input Report failed: {inputReportResult.Error}");
 
             _inputReportCharacteristic = inputReportResult.Characteristic;
             _inputReportCharacteristic.SubscribedClientsChanged += InputReportCharacteristic_SubscribedClientsChanged;
-            Log("Input Report characteristic created and event handler subscribed.");
 
-            var reportRefParams = new GattLocalDescriptorParameters { StaticValue = new byte[] { 0x01, 0x01 }.AsBuffer(), ReadProtectionLevel = protectionLevel }; // Changed
+            var reportRefParams = new GattLocalDescriptorParameters { StaticValue = new byte[] { 0x01, 0x01 }.AsBuffer(), ReadProtectionLevel = protectionLevel };
             var descResult = await _inputReportCharacteristic.CreateDescriptorAsync(GattDescriptorUuidReportReference, reportRefParams);
             if (descResult.Error != BluetoothError.Success) throw new Exception($"Create Report Ref failed: {descResult.Error}");
 
-            var controlPointParameters = new GattLocalCharacteristicParameters { CharacteristicProperties = GattCharacteristicProperties.WriteWithoutResponse, WriteProtectionLevel = protectionLevel }; // Changed
+            var controlPointParameters = new GattLocalCharacteristicParameters { CharacteristicProperties = GattCharacteristicProperties.WriteWithoutResponse, WriteProtectionLevel = protectionLevel };
             result = await _serviceProvider.Service.CreateCharacteristicAsync(HidControlPointUuid, controlPointParameters);
             if (result.Error != BluetoothError.Success) throw new Exception($"Create Control Point failed: {result.Error}");
 
-            Log("All HID characteristics created successfully with encryption required.");
+            Log("All HID characteristics created successfully.");
         }
 
+        //================================================================================
+        // CORRECTED HID REPORT MAP - THIS IS THE MOST CRITICAL CHANGE
+        //================================================================================
         private static byte[] GetHidReportMap()
         {
-            // This HID Report Map has been modified to define the controls as RELATIVE.
-            // This sends atomic "trigger" events instead of stateful "down/up" events,
-            // which works around the phone's OS input bug.
+            // This HID Report Map tells the OS (iOS/Android) that we will be sending
+            // a single 16-bit value representing the specific consumer control key that was pressed.
+            // This is a standard and highly compatible way to implement media keys.
             return
             [
                 0x05, 0x0C,       // Usage Page (Consumer)
                 0x09, 0x01,       // Usage (Consumer Control)
                 0xA1, 0x01,       // Collection (Application)
                 0x85, 0x01,       //   Report ID (1)
-                0x15, 0x00,       //   Logical Minimum (0)
-                0x25, 0x01,       //   Logical Maximum (1)
-                0x09, 0xE9,       //   Usage (Volume Increment)
-                0x09, 0xEA,       //   Usage (Volume Decrement)
-                0x09, 0xCD,       //   Usage (Play/Pause)
-                0x09, 0xE2,       //   Usage (Mute)
-                0x75, 0x01,       //   Report Size (1)
-                0x95, 0x04,       //   Report Count (4)
-                0x81, 0x06,       //   Input (Data,Var,Rel)  <- NEW TRIGGER WAY
-                0x75, 0x04,       //   Report Size (4) -- Pad to 1 byte
+                0x15, 0x01,       //   Logical Minimum (1)
+                0x26, 0xFF, 0x03, //   Logical Maximum (1023)
+                0x19, 0x01,       //   Usage Minimum (1)
+                0x2A, 0xFF, 0x03, //   Usage Maximum (1023)
+                0x75, 0x10,       //   Report Size (16) -> 2 bytes
                 0x95, 0x01,       //   Report Count (1)
-                0x81, 0x03,       //   Input (Cnst,Var,Abs) -- The padding is constant.
+                0x81, 0x00,       //   Input (Data,Ary,Abs)
                 0xC0              // End Collection
             ];
         }
