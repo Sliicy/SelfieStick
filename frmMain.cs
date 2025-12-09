@@ -183,7 +183,7 @@ namespace SelfieStick
                 GattServiceProviderResult result = await GattServiceProvider.CreateAsync(HidServiceUuid);
                 if (result.Error != BluetoothError.Success)
                 {
-                    MessageBox.Show($"Could not create HID service: {result.Error}. Try running as Administrator.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"Could not create HID service: {result.Error}. Double-check Bluetooth is enabled or try running as Administrator.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     ResetUiToIdle();
                     return;
                 }
