@@ -253,7 +253,7 @@ namespace SelfieStick
             }
             else
             {
-                statusLabel.Text = "Status: Advertising. Waiting for connections...";
+                statusLabel.Text = "Status: Advertising, waiting for connections...";
             }
         }
 
